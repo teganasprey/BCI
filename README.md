@@ -1,4 +1,4 @@
-# __BCI Research__
+# BCI Research
 
 This repo contains all materials necessary to analyze a set of data collected as part of a study on motor imagery BCI. The data can be downloaded from: [BCI Data](https://figshare.com/collections/A_large_electroencephalographic_motor_imagery_dataset_for_electroencephalographic_brain_computer_interfaces/3917698),
 
@@ -32,6 +32,7 @@ Digital filters play an important role in EEG analysis. Digital filters work by 
 Several modelling techniques are included in the repo. These include methods for classification of feature and signals, including the following:
 
 ### ELM
+ELM (Extreme Learning Machine) was first introduced to improve the efficiency and speed of a single-hidden-layer feedforward network (SLFN). The ELM algorithm does not require hidden nodes/neurons to be tuned. ELM randomly assigns hidden nodes, constructs biases and input weights of hidden layers, and determines the output weights using least squares methods. This results in low computational times for ELM.
 
 ### KNN
 
