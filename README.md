@@ -25,6 +25,9 @@ The discrete Fourier transform (DFT) is a mathematical tool to describe the rela
 ### DWT
 The Discrete Wavelet Transform (DWT) decomposes a signal into a set of mutually orthogonal wavelet basis functions. DWT refers to a set of transforms, each with a different set of wavelet basis functions.
 
+### CCA
+
+
 ### Digital Filtering
 Digital filters play an important role in EEG analysis. Digital filters work by suppressing artifacts, or unwanted noise, in EEG data. The primary types of filters include low-pass, high-pass, bandpass, and notch filters. 
 
@@ -41,6 +44,7 @@ ELM (Extreme Learning Machine) was first introduced to improve the efficiency an
 ### Naive Bayes
 
 ### SVM
+Support vector machine (SVM) represents one regulated learning model associated with concerned learning algorithms. 
 
 In addition to classification algorithms, the repo also includes several implementations of neural network models, including the following:
 
