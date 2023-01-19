@@ -32,7 +32,7 @@ class DataLoader(object):
 
         self.data_directory = config['data']['directory'].replace('{user}', self.user)
 
-    def load_data(self):
+    def load_data(self) -> bool:
         filename = self.data_directory
         if self.operating_system == 'Windows':
             filename += '\\' + self.file_name
@@ -44,8 +44,9 @@ class DataLoader(object):
         self.readings = raw_data[0][0][6]
         self.electrode_names = raw_data[0][0][7]
         self.data_loaded = True
+        return self.data_loaded
 
-    def to_pandas(self):
+    def to_pandas(self) -> pd.DataFrame:
         if self.data_loaded:
             markers_df = pd.DataFrame(self.marker_codes)
             readings_df = pd.DataFrame(self.readings)
@@ -53,8 +54,9 @@ class DataLoader(object):
             self.dataframe = pd.concat([markers_df, readings_df], axis=1)
             headers = ['marker'] + self.electrode_names_expected
             self.dataframe.columns = headers
+            return self.dataframe
 
-    def to_polars(self):
+    def to_polars(self) -> pl.DataFrame:
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
             markers_df.columns = ['marker']
@@ -63,6 +65,7 @@ class DataLoader(object):
             self.dataframe = pl.concat([markers_df, readings_df], how='horizontal')
             headers = ['marker'] + self.electrode_names_expected
             self.dataframe.columns = headers
+            return self.dataframe
 
 
 if __name__ == '__main__':
@@ -74,8 +77,8 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     dl = DataLoader(config=config)
-    dl.load_data()
-    dl.to_pandas()
-    dl.to_polars()
+    loaded = dl.load_data()
+    dfd = dl.to_pandas()
+    dfl = dl.to_polars()
     print("Finished.")
 
