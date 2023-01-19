@@ -1,0 +1,7 @@
+{
+    "data" : {
+        "directory" : "/Users/{user}/Desktop/Data",
+        "file" : "5F-SubjectA-160405-5St-SGLHand.mat"
+    },
+    "framework" : "polars"
+}

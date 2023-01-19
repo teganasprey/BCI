@@ -1,0 +1,7 @@
+{
+    "data" : {
+        "directory" : "C:\\Users\\{user}\\source\\Python\\Tegan\\BCI\\Data",
+        "file" : "CLA-SubjectJ-170508-3St-LRHand-Inter.mat"
+    },
+    "framework" : "polars"
+}
