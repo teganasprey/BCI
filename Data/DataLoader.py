@@ -16,6 +16,7 @@ class DataLoader(object):
     marker_codes = None
     readings = None
     electrode_names = None
+    electrode_names_expected = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8', 'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
     dataframe = None
     framework = None
     data_loaded = False
@@ -49,12 +50,18 @@ class DataLoader(object):
             markers_df = pd.DataFrame(self.marker_codes)
             readings_df = pd.DataFrame(self.readings)
             electrodes_df = pd.DataFrame(self.electrode_names)
+            self.dataframe = pd.concat([markers_df, readings_df], axis=1)
+            headers = ['marker'] + self.electrode_names_expected
+            self.dataframe.columns = headers
 
     def to_polars(self):
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
             readings_df = pl.DataFrame(self.readings)
             electrodes_df = pl.DataFrame(self.electrode_names)
+            self.dataframe = pl.concat([markers_df, readings_df], how='horizontal')
+            headers = ['marker'] + self.electrode_names_expected
+            self.dataframe.columns = headers
 
 
 if __name__ == '__main__':
