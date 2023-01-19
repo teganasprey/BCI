@@ -1,7 +1,6 @@
 import pandas as pd
 import polars as pl
 from scipy.io import loadmat
-import os
 import getpass
 import platform
 from Utilities.Config.Config import Config
