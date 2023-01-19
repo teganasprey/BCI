@@ -19,6 +19,7 @@ class DataLoader(object):
     electrode_names = None
     dataframe = None
     framework = None
+    data_loaded = False
 
     def __init__(self, config=None):
         self.config = config
@@ -39,15 +40,22 @@ class DataLoader(object):
             filename += '/' + self.file_name
         rd = loadmat(filename)
         raw_data = rd['o']
-        self.marker_codes = raw_data[0][0][4]
-        self.readings = raw_data[0][0][5]
-        self.electrode_names = raw_data[0][0][6]
+        self.marker_codes = raw_data[0][0][5]
+        self.readings = raw_data[0][0][6]
+        self.electrode_names = raw_data[0][0][7]
+        self.data_loaded = True
 
     def to_pandas(self):
-        pass
+        if self.data_loaded:
+            markers_df = pd.DataFrame(self.marker_codes)
+            readings_df = pd.DataFrame(self.readings)
+            electrodes_df = pd.DataFrame(self.electrode_names)
 
     def to_polars(self):
-        pass
+        if self.data_loaded:
+            markers_df = pl.DataFrame(self.marker_codes)
+            readings_df = pl.DataFrame(self.readings)
+            electrodes_df = pl.DataFrame(self.electrode_names)
 
 
 if __name__ == '__main__':
