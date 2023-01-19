@@ -6,7 +6,7 @@ import getpass
 
 if __name__ == '__main__':
     user = getpass.getuser()
-    filename = '\\Users\\' + user + '\\Desktop\\Data\\5F-SubjectA-160405-5St-SGLHand.mat'
+    filename = '/Users/' + user + '/Desktop/Data/5F-SubjectA-160405-5St-SGLHand.mat'
     data = loadmat(filename)
     dat = data['o']
     marker_codes = dat[0][0][4]
