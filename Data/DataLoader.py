@@ -57,6 +57,7 @@ class DataLoader(object):
     def to_polars(self):
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
+            markers_df.columns = ['marker']
             readings_df = pl.DataFrame(self.readings)
             electrodes_df = pl.DataFrame(self.electrode_names)
             self.dataframe = pl.concat([markers_df, readings_df], how='horizontal')
