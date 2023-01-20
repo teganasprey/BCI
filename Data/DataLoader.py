@@ -16,8 +16,8 @@ class DataLoader(object):
     marker_codes = None
     readings = None
     electrode_names = None
-    electrode_names_expected = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8', 'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
-    dataframe = None
+    electrode_names_expected = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
+                                'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
     framework = None
     data_loaded = False
 
@@ -26,10 +26,9 @@ class DataLoader(object):
         self.operating_system = platform.system()
         self.user = getpass.getuser()
 
-        # use config settings
+        # use config settings to set fields
         self.file_name = config['data']['file']
         self.framework = config['framework']
-
         self.data_directory = config['data']['directory'].replace('{user}', self.user)
 
     def load_data(self) -> bool:
@@ -51,10 +50,10 @@ class DataLoader(object):
             markers_df = pd.DataFrame(self.marker_codes)
             readings_df = pd.DataFrame(self.readings)
             electrodes_df = pd.DataFrame(self.electrode_names)
-            self.dataframe = pd.concat([markers_df, readings_df], axis=1)
+            dataframe = pd.concat([markers_df, readings_df], axis=1)
             headers = ['marker'] + self.electrode_names_expected
-            self.dataframe.columns = headers
-            return self.dataframe
+            dataframe.columns = headers
+            return dataframe
 
     def to_polars(self) -> pl.DataFrame:
         if self.data_loaded:
@@ -62,10 +61,10 @@ class DataLoader(object):
             markers_df.columns = ['marker']
             readings_df = pl.DataFrame(self.readings)
             electrodes_df = pl.DataFrame(self.electrode_names)
-            self.dataframe = pl.concat([markers_df, readings_df], how='horizontal')
+            dataframe = pl.concat([markers_df, readings_df], how='horizontal')
             headers = ['marker'] + self.electrode_names_expected
-            self.dataframe.columns = headers
-            return self.dataframe
+            dataframe.columns = headers
+            return dataframe
 
 
 if __name__ == '__main__':
@@ -80,5 +79,7 @@ if __name__ == '__main__':
     loaded = dl.load_data()
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
+    dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
+    dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
     print("Finished.")
 
