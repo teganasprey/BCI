@@ -77,9 +77,9 @@ class DataLoader(object):
 
 if __name__ == '__main__':
     # for Steven
-    filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
+    #filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
     # for Tegan
-    # filename = '/Users/BCI/Utilities/Config/config_tegan.json'
+    filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
 
     config = Config(file_name=filename)
     config = config.settings
