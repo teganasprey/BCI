@@ -4,6 +4,7 @@ from scipy.io import loadmat
 import getpass
 import platform
 from Utilities.Config.Config import Config
+import mne
 
 
 class DataLoader(object):
@@ -66,6 +67,13 @@ class DataLoader(object):
             dataframe.columns = headers
             return dataframe
 
+    def to_mne(self) -> mne.io.RawArray:
+        sample_freq = 200
+        data = self.to_pandas()
+        info = mne.create_info(ch_names=self.electrode_names_expected, sfreq=sample_freq)
+        raw = mne.io.RawArray(data=data[self.electrode_names_expected].transpose(), info=info)
+        return raw
+
 
 if __name__ == '__main__':
     # for Steven
@@ -79,7 +87,8 @@ if __name__ == '__main__':
     loaded = dl.load_data()
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
-    dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
-    dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
+    raw_mne = dl.to_mne()
+    # testing feather file format: dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
+    # testing parquet file format: dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
     print("Finished.")
 
