@@ -5,6 +5,9 @@ import getpass
 import platform
 from Utilities.Config.Config import Config
 import mne
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+mpl.use('macosx')
 
 
 class DataLoader(object):
