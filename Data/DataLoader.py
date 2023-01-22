@@ -5,9 +5,11 @@ import getpass
 import platform
 from Utilities.Config.Config import Config
 import mne
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-mpl.use('macosx')
+
+if platform.system() == 'Darwin':
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    mpl.use('macosx')
 
 
 class DataLoader(object):
@@ -19,9 +21,11 @@ class DataLoader(object):
     user = None
     marker_codes = None
     readings = None
-    electrode_names = None
+    electrode_names_raw = None
     electrode_names_expected = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
                                 'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
+    electrode_names = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
+                       'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz']
     framework = None
     data_loaded = False
 
@@ -45,7 +49,7 @@ class DataLoader(object):
         raw_data = rd['o']
         self.marker_codes = raw_data[0][0][5]
         self.readings = raw_data[0][0][6]
-        self.electrode_names = raw_data[0][0][7]
+        self.electrode_names_raw = raw_data[0][0][7]
         self.data_loaded = True
         return self.data_loaded
 
@@ -53,7 +57,7 @@ class DataLoader(object):
         if self.data_loaded:
             markers_df = pd.DataFrame(self.marker_codes)
             readings_df = pd.DataFrame(self.readings)
-            electrodes_df = pd.DataFrame(self.electrode_names)
+            electrodes_df = pd.DataFrame(self.electrode_names_raw)
             dataframe = pd.concat([markers_df, readings_df], axis=1)
             headers = ['marker'] + self.electrode_names_expected
             dataframe.columns = headers
@@ -73,16 +77,18 @@ class DataLoader(object):
     def to_mne(self) -> mne.io.RawArray:
         sample_freq = 200
         data = self.to_pandas()
-        info = mne.create_info(ch_names=self.electrode_names_expected, sfreq=sample_freq)
-        raw = mne.io.RawArray(data=data[self.electrode_names_expected].transpose(), info=info)
+        channel_types = ['eeg'] * 21
+        info = mne.create_info(ch_names=self.electrode_names, sfreq=sample_freq, ch_types=channel_types)
+        info.set_montage('standard_1020')
+        raw = mne.io.RawArray(data=data[self.electrode_names].transpose(), info=info)
         return raw
 
 
 if __name__ == '__main__':
     # for Steven
-    #filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
+    filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
     # for Tegan
-    filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
+    #filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
 
     config = Config(file_name=filename)
     config = config.settings
@@ -91,6 +97,8 @@ if __name__ == '__main__':
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
     raw_mne = dl.to_mne()
+    # raw_mne.plot()
+    spectrum = raw_mne.plot_sensors(ch_type='eeg')
     # testing feather file format: dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
     # testing parquet file format: dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
     print("Finished.")
