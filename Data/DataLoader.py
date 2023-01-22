@@ -86,9 +86,9 @@ class DataLoader(object):
 
 if __name__ == '__main__':
     # for Steven
-    filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
+    #filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
     # for Tegan
-    #filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
+    filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
 
     config = Config(file_name=filename)
     config = config.settings
@@ -98,7 +98,11 @@ if __name__ == '__main__':
     dfl = dl.to_polars()
     raw_mne = dl.to_mne()
     # raw_mne.plot()
-    spectrum = raw_mne.plot_sensors(ch_type='eeg')
+    #spectrum = raw_mne.plot_sensors(ch_type='eeg')
+    #raw_mne.plot_psd(average=True)
+    #raw_mne.plot_psd_topo()
+    #raw_mne.pick('eeg').plot_psd_topo()
+    #raw_mne.plot_projs_topomap(colorbar=True) <-- this doesn't work
     # testing feather file format: dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
     # testing parquet file format: dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
     print("Finished.")
