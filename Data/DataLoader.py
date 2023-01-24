@@ -14,6 +14,7 @@ if platform.system() == 'Darwin':
 
 class DataLoader(object):
 
+    # class level fields
     config = None
     data_directory = None
     operating_system = None
@@ -30,6 +31,11 @@ class DataLoader(object):
     data_loaded = False
 
     def __init__(self, config=None):
+        """
+        Constructor
+        :param config:
+        :type config:
+        """
         self.config = config
         self.operating_system = platform.system()
         self.user = getpass.getuser()
@@ -40,6 +46,11 @@ class DataLoader(object):
         self.data_directory = config['data']['directory'].replace('{user}', self.user)
 
     def load_data(self) -> bool:
+        """
+        Method to load the data file specified in the config file being used
+        :return:
+        :rtype:
+        """
         filename = self.data_directory
         if self.operating_system == 'Windows':
             filename += '\\' + self.file_name
@@ -54,6 +65,11 @@ class DataLoader(object):
         return self.data_loaded
 
     def to_pandas(self) -> pd.DataFrame:
+        """
+        Method to convert the data into a Pandas dataframe
+        :return:
+        :rtype:
+        """
         if self.data_loaded:
             markers_df = pd.DataFrame(self.marker_codes)
             readings_df = pd.DataFrame(self.readings)
@@ -64,6 +80,11 @@ class DataLoader(object):
             return dataframe
 
     def to_polars(self) -> pl.DataFrame:
+        """
+        Method to convert the data into a Polars dataframe
+        :return:
+        :rtype:
+        """
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
             markers_df.columns = ['marker']
@@ -75,6 +96,11 @@ class DataLoader(object):
             return dataframe
 
     def to_mne(self) -> mne.io.RawArray:
+        """
+        Method to convert the data into an MNE RawArray, with all relevant meta information
+        :return:
+        :rtype:
+        """
         sample_freq = 200
         data = self.to_pandas()
         channel_types = ['eeg'] * 21
@@ -85,10 +111,12 @@ class DataLoader(object):
 
 
 if __name__ == '__main__':
-    # for Steven
-    #filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
-    # for Tegan
-    filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
+    if platform.system() == 'Windows':
+        # for Steven
+        filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
+    elif platform.system() == 'Darwin':
+        # for Tegan
+        filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
 
     config = Config(file_name=filename)
     config = config.settings
@@ -98,12 +126,15 @@ if __name__ == '__main__':
     dfl = dl.to_polars()
     raw_mne = dl.to_mne()
     # raw_mne.plot()
-    #spectrum = raw_mne.plot_sensors(ch_type='eeg')
-    #raw_mne.plot_psd(average=True)
-    #raw_mne.plot_psd_topo()
-    #raw_mne.pick('eeg').plot_psd_topo()
-    #raw_mne.plot_projs_topomap(colorbar=True) <-- this doesn't work
-    # testing feather file format: dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
-    # testing parquet file format: dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip', compression='gzip')
+    # spectrum = raw_mne.plot_sensors(ch_type='eeg')
+    # raw_mne.plot_psd(average=True)
+    # raw_mne.plot_psd_topo()
+    # raw_mne.pick('eeg').plot_psd_topo()
+    # raw_mne.plot_projs_topomap(colorbar=True) <-- this doesn't work
+    # testing feather file format:
+    # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
+    # testing parquet file format:
+    # dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip',
+    #                compression='gzip')
     print("Finished.")
 
