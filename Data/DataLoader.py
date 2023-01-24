@@ -13,7 +13,6 @@ if platform.system() == 'Darwin':
 
 
 class DataLoader(object):
-
     # class level fields
     config = None
     data_directory = None
@@ -106,6 +105,9 @@ class DataLoader(object):
         channel_types = ['eeg'] * 21
         info = mne.create_info(ch_names=self.electrode_names, sfreq=sample_freq, ch_types=channel_types)
         info.set_montage('standard_1020')
+        # settable fields in info are:
+        # info['bads'], info['description'], info['device_info'], info['dev_head_t'], info['experimenter'],
+        # info[‘helium_info’], info['line_freq'], info['temp'], info['subject_info']
         raw = mne.io.RawArray(data=data[self.electrode_names].transpose(), info=info)
         return raw
 
