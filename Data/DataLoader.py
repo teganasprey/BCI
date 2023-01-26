@@ -13,25 +13,37 @@ if platform.system() == 'Darwin':
 
 
 class DataLoader(object):
+
+    # class level constants
+    ELECTRODE_NAMES_EXPECTED = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
+                                'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
+    ELECTRODE_NAMES = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
+                       'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz']
+    CLA_HALT_FREEFORM_EVENT_DICT = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
+                                    'left leg MI': 4, 'tongue MI': 5, 'right leg MI': 6,
+                                    'initial relaxation period': 99, 'inter-session rest break period': 91,
+                                    'experiment end': 92}
+    FIVE_FINGERS_EVENT_DICT = {'thumb MI': 1, 'index finger MI': 2, 'middle finger': 3, 'ring finger': 4,
+                               'pinkie finger': 5, 'initial relaxation period': 99,
+                               'inter-session rest break period': 91, 'experiment end': 92}
+
     # class level fields
     config = None
     data_directory = None
     operating_system = None
-    file_name = None
     user = None
+
+    file_name = None
     marker_codes = None
     readings = None
     electrode_names_raw = None
-    electrode_names_expected = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
-                                'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
-    electrode_names = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
-                       'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz']
-    cla_halt_freeform_event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
-                                    'left leg MI': 4, 'tongue MI': 5, 'right leg MI': 6,
-                                    'initial relaxation period': 99, 'inter-session rest break period': 91,
-                                    'experiment end': 92}
-    five_f_event_dict = {'thumb MI': 1, 'index finger MI': 2, 'middle finger': 3, 'ring finger': 4, 'pinkie finger': 5,
-                         'initial relaxation period': 99, 'inter-session rest break period': 91, 'experiment end': 92}
+    experiment_paradigm = None          # e.g., 5F, CLA, FREEFORM, HaLT, NoMT
+    experiment_stimuli = None           # e.g., LRHand
+    subject = None                      # A-J
+    file_date = None                    # YYMMDD
+    states = None                       # e.g., 3St
+    experiment_mode = None              # e.g., Inter, HFREQ
+
     framework = None
     data_loaded = False
 
@@ -50,24 +62,47 @@ class DataLoader(object):
         self.framework = config['framework']
         self.data_directory = config['data']['directory'].replace('{user}', self.user)
 
-    def load_data(self) -> bool:
+    def load_data_from_file(self) -> bool:
         """
         Method to load the data file specified in the config file being used
         :return: True when the data have been loaded successfully
         :rtype: bool
         """
+        # form the full file name with path
         filename = self.data_directory
         if self.operating_system == 'Windows':
             filename += '\\' + self.file_name
         elif self.operating_system == 'Darwin':
             filename += '/' + self.file_name
+
+        # extract information from the file name
+        components = self.file_name.split('.')
+        info = components[0].split('-')
+        self.experiment_paradigm = info[0]
+        self.subject = info[1][-1]
+        self.file_date = info[2]
+        self.states = info[3]
+        self.experiment_stimuli = info[4]
+        self.experiment_mode = info[5]
+
+        # load the mat file
         rd = loadmat(filename)
+
+        # process the mat file data into arrays
         raw_data = rd['o']
         self.marker_codes = raw_data[0][0][5]
         self.readings = raw_data[0][0][6]
         self.electrode_names_raw = raw_data[0][0][7]
+
+        # return
         self.data_loaded = True
         return self.data_loaded
+
+    def load_data_from_sql(self):
+        pass
+
+    def push_data_to_sql(self):
+        pass
 
     def to_pandas(self) -> pd.DataFrame:
         """
@@ -158,7 +193,7 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     dl = DataLoader(config=config)
-    loaded = dl.load_data()
+    loaded = dl.load_data_from_file()
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
     raw_mne = dl.to_mne_raw()
