@@ -26,13 +26,19 @@ class DataLoader(object):
                                 'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
     electrode_names = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
                        'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz']
+    cla_halt_freeform_event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
+                                    'left leg MI': 4, 'tongue MI': 5, 'right leg MI': 6,
+                                    'initial relaxation period': 99, 'inter-session rest break period': 91,
+                                    'experiment end': 92}
+    five_f_event_dict = {'thumb MI': 1, 'index finger MI': 2, 'middle finger': 3, 'ring finger': 4, 'pinkie finger': 5,
+                         'initial relaxation period': 99, 'inter-session rest break period': 91, 'experiment end': 92}
     framework = None
     data_loaded = False
 
     def __init__(self, config=None):
         """
-        Constructor
-        :param config:
+        Constructor for the data loader class
+        :param config: - the config object to use for settings
         :type config:
         """
         self.config = config
@@ -47,8 +53,8 @@ class DataLoader(object):
     def load_data(self) -> bool:
         """
         Method to load the data file specified in the config file being used
-        :return:
-        :rtype:
+        :return: True when the data have been loaded successfully
+        :rtype: bool
         """
         filename = self.data_directory
         if self.operating_system == 'Windows':
@@ -65,9 +71,9 @@ class DataLoader(object):
 
     def to_pandas(self) -> pd.DataFrame:
         """
-        Method to convert the data into a Pandas dataframe
-        :return:
-        :rtype:
+        Method to convert the data into a Pandas DataFrame
+        :return: DataFrame containing the data, including markers
+        :rtype: pandas DataFrame
         """
         if self.data_loaded:
             markers_df = pd.DataFrame(self.marker_codes)
@@ -80,9 +86,9 @@ class DataLoader(object):
 
     def to_polars(self) -> pl.DataFrame:
         """
-        Method to convert the data into a Polars dataframe
-        :return:
-        :rtype:
+        Method to convert the data into a Polars DataFrame
+        :return: DataFrame containing the data, including markers
+        :rtype: polars DataFrame
         """
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
@@ -94,22 +100,51 @@ class DataLoader(object):
             dataframe.columns = headers
             return dataframe
 
-    def to_mne(self) -> mne.io.RawArray:
+    def to_mne_raw(self) -> mne.io.RawArray:
         """
         Method to convert the data into an MNE RawArray, with all relevant meta information
-        :return:
-        :rtype:
+        :return: raw MNE data array containing the signal data, the info data and electrode montage
+        :rtype: mne.io.RawArray
         """
-        sample_freq = 200
         data = self.to_pandas()
+        info = self.create_mne_info()
+        raw = mne.io.RawArray(data=data[self.electrode_names].transpose(), info=info)
+        return raw
+
+    def create_mne_info(self) -> mne.Info:
+        """
+        Method to create an MNE info object for use in creating RawArray and EpochArray objects
+        :return: MNE Info object containing meta information
+        :rtype: mne.Info
+        """
+        # prepare data for the "info" object
+        sample_freq = 200
         channel_types = ['eeg'] * 21
         info = mne.create_info(ch_names=self.electrode_names, sfreq=sample_freq, ch_types=channel_types)
         info.set_montage('standard_1020')
+
         # settable fields in info are:
-        # info['bads'], info['description'], info['device_info'], info['dev_head_t'], info['experimenter'],
-        # info[‘helium_info’], info['line_freq'], info['temp'], info['subject_info']
-        raw = mne.io.RawArray(data=data[self.electrode_names].transpose(), info=info)
-        return raw
+        # info['bads'] - channel names with known bad data
+        # info['description'] - general description field
+        # info['subject_info'] - information about the subject
+        # other fields of interest: info['device_info'], info['dev_head_t'], info['experimenter'], info[‘helium_info’],
+        # info['line_freq'], info['temp']
+        return info
+
+    def create_mne_epochs(self) -> mne.EpochsArray:
+        """
+        Method to create MNE epochs array from scratch
+        :return: MNE Epochs Array contains the epochs data
+        :rtype: mne.EpochsArray
+        """
+        data = self.to_pandas()
+        markers = pd.DataFrame(data['marker'])
+        markers['zeros'] = 0
+        markers['sample'] = markers.reset_index().index
+        events = markers[['sample', 'zeros', 'marker']].to_numpy()
+        epochs = mne.EpochsArray(data=data.to_numpy(), info=self.create_mne_info(), events=events, tmin=0,
+                                 event_id=self.cla_halt_freeform_event_dict)
+        return epochs
 
 
 if __name__ == '__main__':
@@ -126,7 +161,9 @@ if __name__ == '__main__':
     loaded = dl.load_data()
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
-    raw_mne = dl.to_mne()
+    raw_mne = dl.to_mne_raw()
+    epochs = dl.create_mne_epochs()
+
     # raw_mne.plot()
     # testing feather file format for storing data in binary format:
     # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')

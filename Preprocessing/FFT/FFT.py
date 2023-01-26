@@ -23,11 +23,12 @@ class FFT(object):
         dl = DataLoader(config=self.config)
         self.data_loaded = dl.load_data()
         self.pandas_data = dl.to_pandas()
-        self.raw_mne_data = dl.to_mne()
+        self.raw_mne_data = dl.to_mne_raw()
         return self.data_loaded
 
     def to_fft(self):
         psd, freqs = mne.time_frequency.psd_welch(inst=self.raw_mne_data)
+        return psd, freqs
 
 
 if __name__ == '__main__':
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     fft = FFT(config=config)
-    f
+    psd, freqs = fft.to_fft()
 
 
 
