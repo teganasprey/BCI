@@ -3,5 +3,16 @@
         "directory" : "/Users/teganasprey/Desktop/Data",
         "file" : "CLA-SubjectJ-170508-3St-LRHand-Inter.mat"
     },
-    "framework" : "polars"
+    "framework" : "polars",
+    "fft_settings" : {
+        "frequency_min" : 100,
+        "frequency_max" : 1000,
+        "time_min" : 0,
+        "time_max" : 1000,
+        "fft_length": 100,
+        "overlap" : 10,
+        "Welch_segment_length" : 10,
+        "picks" : "None",
+        "parallel_jobs" : 1
+    }
 }

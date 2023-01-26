@@ -1,9 +1,49 @@
+from Data.DataLoader import DataLoader
+from Utilities.Config.Config import Config
+import platform
+import mne
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-import mne
 from mne.datasets import somato
 from mne.time_frequency import tfr_morlet
+
+
+class FFT(object):
+
+    config = None
+    raw_mne_data = None
+    pandas_data = None
+    data_loaded = False
+
+    def __init__(self, config=None):
+        self.config = config
+
+    def get_data(self) -> bool:
+        dl = DataLoader(config=self.config)
+        self.data_loaded = dl.load_data()
+        self.pandas_data = dl.to_pandas()
+        self.raw_mne_data = dl.to_mne()
+        return self.data_loaded
+
+    def to_fft(self):
+        psd, freqs = mne.time_frequency.psd_welch(inst=self.raw_mne_data)
+
+
+if __name__ == '__main__':
+    if platform.system() == 'Windows':
+        # for Steven
+        filename = 'C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Utilities\\Config\\config_steven.json'
+    elif platform.system() == 'Darwin':
+        # for Tegan
+        filename = '/Users/teganasprey/Desktop/BCI/Utilities/Config/config_tegan.json'
+
+    config = Config(file_name=filename)
+    config = config.settings
+    fft = FFT(config=config)
+    f
+
+
 
 #replace somato with RawArray and our own data
 data_path = somato.data_path()

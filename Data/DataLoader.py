@@ -128,14 +128,9 @@ if __name__ == '__main__':
     dfl = dl.to_polars()
     raw_mne = dl.to_mne()
     # raw_mne.plot()
-    # spectrum = raw_mne.plot_sensors(ch_type='eeg')
-    # raw_mne.plot_psd(average=True)
-    # raw_mne.plot_psd_topo()
-    # raw_mne.pick('eeg').plot_psd_topo()
-    # raw_mne.plot_projs_topomap(colorbar=True) <-- this doesn't work
-    # testing feather file format:
+    # testing feather file format for storing data in binary format:
     # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
-    # testing parquet file format:
+    # testing parquet file format for storing data in binary format:
     # dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip',
     #                compression='gzip')
     print("Finished.")
