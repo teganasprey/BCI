@@ -69,7 +69,7 @@ class DataLoader(object):
         :return: True when the data have been loaded successfully
         :rtype: bool
         """
-        # form the full file name with path
+        # form the full file name with path, depending on the OS
         filename = self.data_directory
         if self.operating_system == 'Windows':
             filename += '\\' + self.file_name
@@ -99,10 +99,16 @@ class DataLoader(object):
         self.data_loaded = True
         return self.data_loaded
 
-    def load_data_from_sql(self, experiment_id=None):
+    def load_data_from_sql(self, experiment_id=None) -> mne.io.RawArray:
         pass
 
     def push_data_to_sql(self) -> bool:
+        """
+        Method to insert data into the Postgres tables (experiment_information and signal_data). The method uses
+        the COPY command to push a csv file to Postgres, which in turn is created using Pandas.
+        :return: whether the data push was successful
+        :rtype: bool
+        """
         postgres = PostgresConnector()
         experiment_id = self.get_next_experiment_id()
         if experiment_id > 0:
@@ -147,6 +153,12 @@ class DataLoader(object):
         return True
 
     def get_next_experiment_id(self) -> int:
+        """
+        Method to check Postgres tables and calculate the next experiment_id tag based on what is already in
+        the database and the file being processed.
+        :return: the experiment_id to use, -1 if already in the database
+        :rtype: int
+        """
         postgres = PostgresConnector()
         sql_query = 'select max(experiment_id) from experiment_information where ' \
                     'concat(paradigm, to_char(experiment_date, \'YYYYMMDD\')) != \''
@@ -258,10 +270,12 @@ if __name__ == '__main__':
     config = config.settings
     dl = DataLoader(config=config)
     loaded = dl.load_data_from_file()
-    dfd = dl.to_pandas()
-    dfl = dl.to_polars()
     dl.push_data_to_sql()
-    raw_mne = dl.to_mne_raw()
+
+    # other tests to run:
+    # raw_mne = dl.to_mne_raw()
+    # dfd = dl.to_pandas()
+    # dfl = dl.to_polars()
     # epochs = dl.create_mne_epochs()
 
     # raw_mne.plot()
