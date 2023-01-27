@@ -1,9 +1,10 @@
+from Utilities.Config.Config import Config
+from Utilities.Database.Postgres.PostgresConnector import PostgresConnector
 import pandas as pd
 import polars as pl
 from scipy.io import loadmat
 import getpass
 import platform
-from Utilities.Config.Config import Config
 import mne
 
 if platform.system() == 'Darwin':
@@ -102,13 +103,40 @@ class DataLoader(object):
         pass
 
     def push_data_to_sql(self):
+        postgres = PostgresConnector()
+        experiment_id = self.get_next_experiment_id()
         experiment_query = 'insert into experiment_information ' \
                            '(experiment_id, experiment_date, paradigm, subject_id, states, stimuli, [mode]) values ' \
                            '('
-        data_query = 'insert into signal_data ' \
-                     '(experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", ' \
-                     '"O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz", "X3") values ' \
-                     '('
+        experiment_query += str(experiment_id) + ', '
+        experiment_query += '\'' + self.file_date + '\', '
+        experiment_query += '\'' + self.experiment_paradigm + '\', '
+        experiment_query += '\'' + self.file_date + '\', '
+        experiment_query += '\'' + self.subject + '\', '
+        experiment_query += '\'' + self.states + '\', '
+        experiment_query += '\'' + self.experiment_stimuli + '\')'
+        postgres.execute(sql_query=experiment_query)
+
+        data_query_root = 'insert into signal_data ' \
+                          '(experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", ' \
+                          '"O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz", "X3") ' \
+                          'values ' \
+                          '('
+
+    def get_next_experiment_id(self) -> int:
+        postgres = PostgresConnector()
+        sql_query = 'select max(experiment_id) from experiment_information where ' \
+                    'concat(paradigm, cast(experiment_date as TEXT)) != \''
+        sql_query += self.experiment_paradigm + self.file_date + '\''
+        rows = postgres.execute_query(sql_query=sql_query)
+        # handle null value (should only occur once ever)
+        value = rows[0][0]
+        if value is None:
+            value = 0
+        else:
+            value = int(value)
+        experiment_id = value + 1
+        return experiment_id
 
     def to_pandas(self) -> pd.DataFrame:
         """

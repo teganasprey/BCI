@@ -40,6 +40,10 @@ class PostgresConnector(object):
         self.cursor.execute(sql_query)
         self.connection.commit()
 
+    def close_connection(self):
+        self.cursor.close()
+        self.connection.close()
+
 
 if __name__ == '__main__':
     postgres = PostgresConnector()
