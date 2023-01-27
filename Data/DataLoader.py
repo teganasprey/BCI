@@ -138,6 +138,9 @@ class DataLoader(object):
             data_query += 'DELIMITER \',\' '
             data_query += 'CSV HEADER;'
             postgres.execute(sql_query=data_query)
+
+            # todo: delete the temporary csv file
+
         else:
             # experiment_id already exists, no need to push the data again
             return True
