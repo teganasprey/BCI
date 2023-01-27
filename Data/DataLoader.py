@@ -102,37 +102,57 @@ class DataLoader(object):
     def load_data_from_sql(self, experiment_id=None):
         pass
 
-    def push_data_to_sql(self):
+    def push_data_to_sql(self) -> bool:
         postgres = PostgresConnector()
         experiment_id = self.get_next_experiment_id()
-        experiment_query = 'insert into experiment_information ' \
-                           '(experiment_id, experiment_date, paradigm, subject_id, states, stimuli, [mode]) values ' \
-                           '('
-        experiment_query += str(experiment_id) + ', '
-        experiment_query += '\'' + self.file_date + '\', '
-        experiment_query += '\'' + self.experiment_paradigm + '\', '
-        experiment_query += '\'' + self.file_date + '\', '
-        experiment_query += '\'' + self.subject + '\', '
-        experiment_query += '\'' + self.states + '\', '
-        experiment_query += '\'' + self.experiment_stimuli + '\')'
-        postgres.execute(sql_query=experiment_query)
+        if experiment_id > 0:
+            experiment_query = 'insert into experiment_information ' \
+                               '(experiment_id, experiment_date, paradigm, subject_id, states, stimuli, [mode]) ' \
+                               'values ' \
+                               '('
+            experiment_query += str(experiment_id) + ', '
+            experiment_query += 'to_date(\'20' + self.file_date + '\', \'YYYYMMDD\'), '
+            experiment_query += '\'' + self.experiment_paradigm + '\', '
+            experiment_query += '\'' + self.subject + '\', '
+            experiment_query += '\'' + self.states + '\', '
+            experiment_query += '\'' + self.experiment_stimuli + '\', '
+            experiment_query += '\'' + self.experiment_mode + '\')'
+            postgres.execute(sql_query=experiment_query)
 
-        data_query_root = 'insert into signal_data ' \
-                          '(experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", ' \
-                          '"O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz", "X3") ' \
-                          'values ' \
-                          '('
+            # create a csv file with the data formatted correctly for the signal_data table
+            data = self.to_pandas()
+            data['experiment_id'] = experiment_id
+            data['sample_index'] = data.reset_index().index
+
+            filename = ''.join([self.experiment_paradigm, self.file_date, self.subject]) + '.csv'
+            data_query = 'COPY signal_data (experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", ' \
+                         '"C4", "P3", "P4", "O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", ' \
+                         '"Pz", "X3") ' \
+                         'FROM \'' + filename + '\'' \
+                         'DELIMITER \',\' ' \
+                         'CSV HEADER;'
+        else:
+            # experiment_id already exists, no need to push the data again
+            return True
+        return True
 
     def get_next_experiment_id(self) -> int:
         postgres = PostgresConnector()
         sql_query = 'select max(experiment_id) from experiment_information where ' \
-                    'concat(paradigm, cast(experiment_date as TEXT)) != \''
-        sql_query += self.experiment_paradigm + self.file_date + '\''
+                    'concat(paradigm, to_char(experiment_date, \'YYYYMMDD\')) != \''
+        sql_query += self.experiment_paradigm + '20' + self.file_date + '\''
         rows = postgres.execute_query(sql_query=sql_query)
-        # handle null value (should only occur once ever)
+        # handle null value
         value = rows[0][0]
         if value is None:
-            value = 0
+            # check whether there are any entries in the table (should only occur once)
+            sql_query = 'select count(*) from experiment_information'
+            rows = postgres.execute_query(sql_query=sql_query)
+            count = int(rows[0][0])
+            if count == 0:
+                value = 0
+            else:
+                return -1
         else:
             value = int(value)
         experiment_id = value + 1
@@ -230,8 +250,9 @@ if __name__ == '__main__':
     loaded = dl.load_data_from_file()
     dfd = dl.to_pandas()
     dfl = dl.to_polars()
+    dl.push_data_to_sql()
     raw_mne = dl.to_mne_raw()
-    epochs = dl.create_mne_epochs()
+    # epochs = dl.create_mne_epochs()
 
     # raw_mne.plot()
     # testing feather file format for storing data in binary format:
