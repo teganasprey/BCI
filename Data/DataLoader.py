@@ -117,20 +117,28 @@ class DataLoader(object):
             experiment_query += '\'' + self.states + '\', '
             experiment_query += '\'' + self.experiment_stimuli + '\', '
             experiment_query += '\'' + self.experiment_mode + '\')'
-            postgres.execute(sql_query=experiment_query)
+            # postgres.execute(sql_query=experiment_query)
 
             # create a csv file with the data formatted correctly for the signal_data table
             data = self.to_pandas()
             data['experiment_id'] = experiment_id
             data['sample_index'] = data.reset_index().index
-
+            columns = data.columns[-2:].tolist() + data.columns[:-2].to_list()
+            data_to_file = data[columns]
             filename = ''.join([self.experiment_paradigm, self.file_date, self.subject]) + '.csv'
+            full_filename = self.data_directory
+            if self.operating_system == 'Windows':
+                full_filename += '\\' + filename
+            elif self.operating_system == 'Darwin':
+                full_filename += '/' + filename
+            data_to_file.to_csv(path=full_filename, sep=',')
             data_query = 'COPY signal_data (experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", ' \
                          '"C4", "P3", "P4", "O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", ' \
                          '"Pz", "X3") ' \
                          'FROM \'' + filename + '\'' \
                          'DELIMITER \',\' ' \
                          'CSV HEADER;'
+            postgres.execute(sql_query=data_query)
         else:
             # experiment_id already exists, no need to push the data again
             return True
