@@ -6,6 +6,7 @@ from scipy.io import loadmat
 import getpass
 import platform
 import mne
+import os
 
 if platform.system() == 'Darwin':
     import matplotlib as mpl
@@ -99,8 +100,19 @@ class DataLoader(object):
         self.data_loaded = True
         return self.data_loaded
 
-    def load_data_from_sql(self, experiment_id=None) -> mne.io.RawArray:
-        pass
+    def load_data_from_sql(self, experiment_id=None, marker=None) -> mne.io.RawArray:
+        postgres = PostgresConnector()
+        sql_query = 'SELECT sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2", ' \
+                    '"A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz" ' \
+                    'FROM signal_data ' \
+                    'where experiment_id = ' + str(experiment_id)
+        if marker is not None:
+            sql_query += 'and marker = ' + str(marker)
+        sql_query += 'order by sample_index'
+        data = postgres.execute_query_to_pandas(sql_query=sql_query)
+        info = self.create_mne_info()
+        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES].transpose(), info=info)
+        return raw
 
     def push_data_to_sql(self) -> bool:
         """
@@ -145,8 +157,11 @@ class DataLoader(object):
             data_query += 'CSV HEADER;'
             postgres.execute(sql_query=data_query)
 
-            # todo: delete the temporary csv file
-
+            # delete the temporary csv file
+            try:
+                os.remove(filename)
+            except OSError:
+                pass
         else:
             # experiment_id already exists, no need to push the data again
             return True
