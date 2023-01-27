@@ -98,14 +98,17 @@ class DataLoader(object):
         self.data_loaded = True
         return self.data_loaded
 
-    def load_data_from_sql(self):
+    def load_data_from_sql(self, experiment_id=None):
         pass
 
     def push_data_to_sql(self):
         experiment_query = 'insert into experiment_information ' \
                            '(experiment_id, experiment_date, paradigm, subject_id, states, stimuli, [mode]) values ' \
                            '('
-        data_query = ''
+        data_query = 'insert into signal_data ' \
+                     '(experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", ' \
+                     '"O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz", "X3") values ' \
+                     '('
 
     def to_pandas(self) -> pd.DataFrame:
         """
