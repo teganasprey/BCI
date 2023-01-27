@@ -102,7 +102,10 @@ class DataLoader(object):
         pass
 
     def push_data_to_sql(self):
-        pass
+        experiment_query = 'insert into experiment_information ' \
+                           '(experiment_id, experiment_date, paradigm, subject_id, states, stimuli, [mode]) values ' \
+                           '('
+        data_query = ''
 
     def to_pandas(self) -> pd.DataFrame:
         """
@@ -115,7 +118,7 @@ class DataLoader(object):
             readings_df = pd.DataFrame(self.readings)
             electrodes_df = pd.DataFrame(self.electrode_names_raw)
             dataframe = pd.concat([markers_df, readings_df], axis=1)
-            headers = ['marker'] + self.electrode_names_expected
+            headers = ['marker'] + self.ELECTRODE_NAMES_EXPECTED
             dataframe.columns = headers
             return dataframe
 
@@ -129,9 +132,9 @@ class DataLoader(object):
             markers_df = pl.DataFrame(self.marker_codes)
             markers_df.columns = ['marker']
             readings_df = pl.DataFrame(self.readings)
-            electrodes_df = pl.DataFrame(self.electrode_names)
+            electrodes_df = pl.DataFrame(self.ELECTRODE_NAMES)
             dataframe = pl.concat([markers_df, readings_df], how='horizontal')
-            headers = ['marker'] + self.electrode_names_expected
+            headers = ['marker'] + self.ELECTRODE_NAMES_EXPECTED
             dataframe.columns = headers
             return dataframe
 
@@ -143,7 +146,7 @@ class DataLoader(object):
         """
         data = self.to_pandas()
         info = self.create_mne_info()
-        raw = mne.io.RawArray(data=data[self.electrode_names].transpose(), info=info)
+        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES].transpose(), info=info)
         return raw
 
     def create_mne_info(self) -> mne.Info:
@@ -155,7 +158,7 @@ class DataLoader(object):
         # prepare data for the "info" object
         sample_freq = 200
         channel_types = ['eeg'] * 21
-        info = mne.create_info(ch_names=self.electrode_names, sfreq=sample_freq, ch_types=channel_types)
+        info = mne.create_info(ch_names=self.ELECTRODE_NAMES, sfreq=sample_freq, ch_types=channel_types)
         info.set_montage('standard_1020')
 
         # settable fields in info are:
@@ -178,7 +181,7 @@ class DataLoader(object):
         markers['sample'] = markers.reset_index().index
         events = markers[['sample', 'zeros', 'marker']].to_numpy()
         epochs = mne.EpochsArray(data=data.to_numpy(), info=self.create_mne_info(), events=events, tmin=0,
-                                 event_id=self.cla_halt_freeform_event_dict)
+                                 event_id=self.CLA_HALT_FREEFORM_EVENT_DICT)
         return epochs
 
 
