@@ -119,6 +119,7 @@ class DataLoader(object):
         info = self.create_mne_info()
         raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES + ['STI001']].transpose(), info=info)
         self.data_raw_mne = raw
+        self.data_pandas = data[self.ELECTRODE_NAMES + ['STI001']]
         return raw
 
     def push_data_to_sql(self) -> bool:
@@ -273,7 +274,7 @@ class DataLoader(object):
         :return: MNE Epochs Array contains the epochs data
         :rtype: mne.EpochsArray
         """
-        data = self.to_pandas()
+        data = self.data_pandas
         events = mne.find_events(raw_mne, stim_channel='STI001')
         epochs = mne.EpochsArray(data=data.to_numpy(), info=self.create_mne_info(), events=events, tmin=0,
                                  event_id=self.CLA_HALT_FREEFORM_EVENT_DICT)
@@ -308,7 +309,7 @@ if __name__ == '__main__':
     # dfl = dl.to_polars()
 
     # create epochs
-    epochs = dl.create_mne_epochs()
+    # epochs = dl.create_mne_epochs()
 
     # raw_mne.plot()
     # testing feather file format for storing data in binary format:
