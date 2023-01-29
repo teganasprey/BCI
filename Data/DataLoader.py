@@ -295,7 +295,7 @@ if __name__ == '__main__':
     raw_mne = dl.load_data_from_sql()
 
     # other tests to run:
-    # raw_mne = dl.to_mne_raw()
+    # raw_mne_file = dl.to_mne_raw()
     # dfd = dl.to_pandas()
     # dfl = dl.to_polars()
     # epochs = dl.create_mne_epochs()
