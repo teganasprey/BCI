@@ -25,9 +25,11 @@ class DataLoader(object):
                                     'left leg MI': 4, 'tongue MI': 5, 'right leg MI': 6,
                                     'initial relaxation period': 99, 'inter-session rest break period': 91,
                                     'experiment end': 92}
+    CLA_HALT_FREEFORM_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y', 6: 'k', 99: 'k', 91: 'k', 92: 'k'}
     FIVE_FINGERS_EVENT_DICT = {'thumb MI': 1, 'index finger MI': 2, 'middle finger': 3, 'ring finger': 4,
                                'pinkie finger': 5, 'initial relaxation period': 99,
                                'inter-session rest break period': 91, 'experiment end': 92}
+    FIVE_FINGERS_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y', 99: 'k', 91: 'k', 92: 'k'}
 
     # class level fields
     config = None
