@@ -102,12 +102,14 @@ class DataLoader(object):
 
     def load_data_from_sql(self, experiment_id=None, marker=None) -> mne.io.RawArray:
         postgres = PostgresConnector()
+        if experiment_id is None:
+            experiment_id = 1
         sql_query = 'SELECT sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2", ' \
                     '"A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz" ' \
                     'FROM signal_data ' \
-                    'where experiment_id = ' + str(experiment_id)
+                    'where experiment_id = ' + str(experiment_id) + ' '
         if marker is not None:
-            sql_query += 'and marker = ' + str(marker)
+            sql_query += 'and marker = ' + str(marker) + ' '
         sql_query += 'order by sample_index'
         data = postgres.execute_query_to_pandas(sql_query=sql_query)
         info = self.create_mne_info()
@@ -284,8 +286,13 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     dl = DataLoader(config=config)
-    loaded = dl.load_data_from_file()
-    dl.push_data_to_sql()
+
+    # load data from file and push it to the Postgres db
+    # loaded = dl.load_data_from_file()
+    # dl.push_data_to_sql()
+
+    # load data from the Postgres db
+    raw_mne = dl.load_data_from_sql()
 
     # other tests to run:
     # raw_mne = dl.to_mne_raw()
