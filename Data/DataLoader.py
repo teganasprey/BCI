@@ -24,12 +24,14 @@ class DataLoader(object):
     CLA_HALT_FREEFORM_EVENT_DICT = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
                                     'left leg MI': 4, 'tongue MI': 5, 'right leg MI': 6,
                                     'initial relaxation period': 99, 'inter-session rest break period': 91,
-                                    'experiment end': 92}
-    CLA_HALT_FREEFORM_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y', 6: 'k', 99: 'k', 91: 'k', 92: 'k'}
+                                    'experiment end': 92, 'warm-up': 90}
+    CLA_HALT_FREEFORM_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y', 6: 'k',
+                                      99: 'k', 91: 'k', 92: 'k', 90: 'k'}
     FIVE_FINGERS_EVENT_DICT = {'thumb MI': 1, 'index finger MI': 2, 'middle finger': 3, 'ring finger': 4,
                                'pinkie finger': 5, 'initial relaxation period': 99,
-                               'inter-session rest break period': 91, 'experiment end': 92}
-    FIVE_FINGERS_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y', 99: 'k', 91: 'k', 92: 'k'}
+                               'inter-session rest break period': 91, 'experiment end': 92, 'warm-up': 90}
+    FIVE_FINGERS_EVENT_COLORS = {1: 'r', 2: 'g', 3: 'b', 4: 'm', 5: 'y',
+                                 99: 'k', 91: 'k', 92: 'k', 90: 'k'}
 
     # class level fields
     config = None
@@ -118,6 +120,9 @@ class DataLoader(object):
             sql_query += 'and marker = ' + str(marker) + ' '
         sql_query += 'order by sample_index'
         data = postgres.execute_query_to_pandas(sql_query=sql_query)
+        # convert units from uV to V (expected by MNE)
+        for electrode in self.ELECTRODE_NAMES:
+            data[electrode] = data[electrode] / 1.0e6
         info = self.create_mne_info()
         raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES + ['STI001']].transpose(), info=info)
         self.data_raw_mne = raw
@@ -245,6 +250,9 @@ class DataLoader(object):
         :rtype: mne.io.RawArray
         """
         data = self.to_pandas()
+        # convert units from uV to V (expected by MNE)
+        for electrode in self.ELECTRODE_NAMES:
+            data[electrode] = data[electrode] / 1.0e6
         info = self.create_mne_info()
         raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES + ['STI001']].transpose(), info=info)
         self.data_raw_mne = raw
