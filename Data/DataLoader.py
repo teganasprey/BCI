@@ -37,7 +37,7 @@ class DataLoader(object):
 
     file_name = None
     marker_codes = None
-    readings = None
+    signal_readings = None
     electrode_names_raw = None
     experiment_paradigm = None          # e.g., 5F, CLA, FREEFORM, HaLT, NoMT
     experiment_stimuli = None           # e.g., LRHand
@@ -45,6 +45,10 @@ class DataLoader(object):
     file_date = None                    # YYMMDD
     states = None                       # e.g., 3St
     experiment_mode = None              # e.g., Inter, HFREQ
+
+    data_pandas = None
+    data_polars = None
+    data_raw_mne = None
 
     framework = None
     data_loaded = False
@@ -93,7 +97,7 @@ class DataLoader(object):
         # process the mat file data into arrays
         raw_data = rd['o']
         self.marker_codes = raw_data[0][0][5]
-        self.readings = raw_data[0][0][6]
+        self.signal_readings = raw_data[0][0][6]
         self.electrode_names_raw = raw_data[0][0][7]
 
         # return
@@ -104,8 +108,8 @@ class DataLoader(object):
         postgres = PostgresConnector()
         if experiment_id is None:
             experiment_id = 1
-        sql_query = 'SELECT sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2", ' \
-                    '"A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz" ' \
+        sql_query = 'SELECT sample_index, marker as "STI001", "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", ' \
+                    '"O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", "Pz" ' \
                     'FROM signal_data ' \
                     'where experiment_id = ' + str(experiment_id) + ' '
         if marker is not None:
@@ -113,7 +117,8 @@ class DataLoader(object):
         sql_query += 'order by sample_index'
         data = postgres.execute_query_to_pandas(sql_query=sql_query)
         info = self.create_mne_info()
-        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES].transpose(), info=info)
+        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES + ['STI001']].transpose(), info=info)
+        self.data_raw_mne = raw
         return raw
 
     def push_data_to_sql(self) -> bool:
@@ -205,11 +210,12 @@ class DataLoader(object):
         """
         if self.data_loaded:
             markers_df = pd.DataFrame(self.marker_codes)
-            readings_df = pd.DataFrame(self.readings)
+            readings_df = pd.DataFrame(self.signal_readings)
             electrodes_df = pd.DataFrame(self.electrode_names_raw)
             dataframe = pd.concat([markers_df, readings_df], axis=1)
             headers = ['marker'] + self.ELECTRODE_NAMES_EXPECTED
             dataframe.columns = headers
+            self.data_pandas = dataframe
             return dataframe
 
     def to_polars(self) -> pl.DataFrame:
@@ -221,11 +227,12 @@ class DataLoader(object):
         if self.data_loaded:
             markers_df = pl.DataFrame(self.marker_codes)
             markers_df.columns = ['marker']
-            readings_df = pl.DataFrame(self.readings)
+            readings_df = pl.DataFrame(self.signal_readings)
             electrodes_df = pl.DataFrame(self.ELECTRODE_NAMES)
             dataframe = pl.concat([markers_df, readings_df], how='horizontal')
             headers = ['marker'] + self.ELECTRODE_NAMES_EXPECTED
             dataframe.columns = headers
+            self.data_polars = dataframe
             return dataframe
 
     def to_mne_raw(self) -> mne.io.RawArray:
@@ -236,7 +243,8 @@ class DataLoader(object):
         """
         data = self.to_pandas()
         info = self.create_mne_info()
-        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES].transpose(), info=info)
+        raw = mne.io.RawArray(data=data[self.ELECTRODE_NAMES + ['STI001']].transpose(), info=info)
+        self.data_raw_mne = raw
         return raw
 
     def create_mne_info(self) -> mne.Info:
@@ -247,8 +255,8 @@ class DataLoader(object):
         """
         # prepare data for the "info" object
         sample_freq = 200
-        channel_types = ['eeg'] * 21
-        info = mne.create_info(ch_names=self.ELECTRODE_NAMES, sfreq=sample_freq, ch_types=channel_types)
+        channel_types = ['eeg'] * 21 + ['stim']
+        info = mne.create_info(ch_names=self.ELECTRODE_NAMES + ['STI001'], sfreq=sample_freq, ch_types=channel_types)
         info.set_montage('standard_1020')
 
         # settable fields in info are:
@@ -266,10 +274,7 @@ class DataLoader(object):
         :rtype: mne.EpochsArray
         """
         data = self.to_pandas()
-        markers = pd.DataFrame(data['marker'])
-        markers['zeros'] = 0
-        markers['sample'] = markers.reset_index().index
-        events = markers[['sample', 'zeros', 'marker']].to_numpy()
+        events = mne.find_events(raw_mne, stim_channel='STI001')
         epochs = mne.EpochsArray(data=data.to_numpy(), info=self.create_mne_info(), events=events, tmin=0,
                                  event_id=self.CLA_HALT_FREEFORM_EVENT_DICT)
         return epochs
@@ -294,11 +299,16 @@ if __name__ == '__main__':
     # load data from the Postgres db
     raw_mne = dl.load_data_from_sql()
 
+    # find the events in the data
+    events = mne.find_events(raw_mne, stim_channel='STI001')
+
     # other tests to run:
     # raw_mne_file = dl.to_mne_raw()
     # dfd = dl.to_pandas()
     # dfl = dl.to_polars()
-    # epochs = dl.create_mne_epochs()
+
+    # create epochs
+    epochs = dl.create_mne_epochs()
 
     # raw_mne.plot()
     # testing feather file format for storing data in binary format:
