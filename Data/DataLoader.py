@@ -311,7 +311,7 @@ if __name__ == '__main__':
     # dl.push_data_to_sql()
 
     # load data from the Postgres db
-    raw_mne = dl.load_data_from_sql(experiment_id=4)
+    raw_mne = dl.load_data_from_sql(experiment_id=6)
 
     # find the events in the data
     events = mne.find_events(raw_mne, stim_channel='STI001')
