@@ -93,16 +93,19 @@ class DataLoader(object):
         self.file_date = info[2]
         self.states = info[3]
         self.experiment_stimuli = info[4]
-        self.experiment_mode = info[5]
+        if len(info) > 5:
+            self.experiment_mode = info[5]
+        else:
+            self.experiment_mode = 'Empty'
 
         # load the mat file
         rd = loadmat(filename)
 
         # process the mat file data into arrays
         raw_data = rd['o']
-        self.marker_codes = raw_data[0][0][5]
-        self.signal_readings = raw_data[0][0][6]
-        self.electrode_names_raw = raw_data[0][0][7]
+        self.marker_codes = raw_data[0][0][4]
+        self.signal_readings = raw_data[0][0][5]
+        self.electrode_names_raw = raw_data[0][0][6]
 
         # return
         self.data_loaded = True
@@ -308,10 +311,10 @@ if __name__ == '__main__':
     # dl.push_data_to_sql()
 
     # load data from the Postgres db
-    raw_mne = dl.load_data_from_sql()
+    # raw_mne = dl.load_data_from_sql(experiment_id=2)
 
     # find the events in the data
-    events = mne.find_events(raw_mne, stim_channel='STI001')
+    # events = mne.find_events(raw_mne, stim_channel='STI001')
 
     # other tests to run:
     # raw_mne_file = dl.to_mne_raw()
