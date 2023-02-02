@@ -178,7 +178,7 @@ class DataLoader(object):
             # delete the temporary csv file
             try:
                 os.remove(filename)
-            except OSError:
+            except OSError as ex:
                 pass
         else:
             # experiment_id already exists, no need to push the data again
@@ -311,10 +311,10 @@ if __name__ == '__main__':
     # dl.push_data_to_sql()
 
     # load data from the Postgres db
-    # raw_mne = dl.load_data_from_sql(experiment_id=2)
+    raw_mne = dl.load_data_from_sql(experiment_id=3)
 
     # find the events in the data
-    # events = mne.find_events(raw_mne, stim_channel='STI001')
+    events = mne.find_events(raw_mne, stim_channel='STI001')
 
     # other tests to run:
     # raw_mne_file = dl.to_mne_raw()

@@ -1,7 +1,7 @@
 {
     "data" : {
         "directory" : "C:\\Users\\{user}\\source\\Python\\Tegan\\BCI\\Data",
-        "file" : "CLA-SubjectB-151019-3St-LRHand.mat"
+        "file" : "CLA-SubjectC-151126-3St-LRHand.mat"
     },
     "framework" : "polars",
     "fft_settings" : {
