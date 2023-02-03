@@ -334,7 +334,8 @@ if __name__ == '__main__':
                   'experiment end': 92}
     epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=0.7, event_id=event_dict,
                         preload=True)
-    evoked = epochs['left hand MI'].average()
+    evoked_lh = epochs['left hand MI'].average()
+    evoked_rh = epochs['right hand MI'].average()
     # epochs['left hand MI'].plot_psd(picks='eeg')
     # epochs['left hand MI'].plot_psd_topomap()
     # epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
