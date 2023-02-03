@@ -334,9 +334,10 @@ if __name__ == '__main__':
                   'experiment end': 92}
     epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=0.7, event_id=event_dict,
                         preload=True)
-    epochs['left hand MI'].plot_psd(picks='eeg')
-    epochs['left hand MI'].plot_psd_topomap()
-    epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
+    evoked = epochs['left hand MI'].average()
+    # epochs['left hand MI'].plot_psd(picks='eeg')
+    # epochs['left hand MI'].plot_psd_topomap()
+    # epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
     # testing feather file format for storing data in binary format:
     # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
