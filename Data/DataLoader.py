@@ -313,6 +313,7 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     dl = DataLoader(config=config)
+    do_plots = bool(config['plots'])
 
     # load data from file and push it to the Postgres db
     # loaded = dl.load_data_from_file()
@@ -325,7 +326,8 @@ if __name__ == '__main__':
     events = mne.find_events(raw_mne, stim_channel='STI001')
 
     # plot the raw data with events overlaid
-    # raw_mne.plot(events=events, color='gray', event_color=dl.CLA_HALT_FREEFORM_EVENT_COLORS, scalings='auto')
+    if do_plots:
+        raw_mne.plot(events=events, color='gray', event_color=dl.CLA_HALT_FREEFORM_EVENT_COLORS, scalings='auto')
 
     # try some filtering
     raw_filter = raw_mne.copy()
@@ -340,13 +342,13 @@ if __name__ == '__main__':
     event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
                   'initial relaxation period': 99, 'inter-session rest break period': 91,
                   'experiment end': 92}
-    epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=0.7, event_id=event_dict,
+    epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=2.3, event_id=event_dict,
                         preload=True)
     evoked_lh = epochs['left hand MI'].average()
     evoked_rh = epochs['right hand MI'].average()
 
     # set aside training data for the CSP
-    epochs_train = epochs.copy().crop(tmin=1., tmax=2.)
+    epochs_train = epochs.copy().crop(tmin=0., tmax=2.)
     labels = epochs.events[:, -1] - 2
 
     # define a monte-carlo cross-validation generator (reduce variance):
@@ -359,26 +361,26 @@ if __name__ == '__main__':
     lda = LinearDiscriminantAnalysis()
     csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
 
-    # Use scikit-learn Pipeline with cross_val_score function
+    # use scikit-learn Pipeline with cross_val_score function
     clf = Pipeline([('CSP', csp), ('LDA', lda)])
     scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1)
 
-    # Printing the results
+    # printing the results
     class_balance = np.mean(labels == labels[0])
     class_balance = max(class_balance, 1. - class_balance)
     print("Classification accuracy: %f / Chance level: %f" % (np.mean(scores), class_balance))
 
     # plot CSP patterns estimated on full data for visualization
-    csp.fit_transform(epochs_data, labels)
-    csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (AU)', size=1.5)
+    if do_plots:
+        csp.fit_transform(epochs_data, labels)
+        csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (AU)', size=1.5)
 
     sfreq = raw_mne.info['sfreq']
-    w_length = int(sfreq * 0.5)  # running classifier: window length
-    w_step = int(sfreq * 0.1)  # running classifier: window step size
+    w_length = int(sfreq * 0.5)     # running classifier: window length
+    w_step = int(sfreq * 0.1)       # running classifier: window step size
     w_start = np.arange(0, epochs_data.shape[2] - w_length, w_step)
 
     scores_windows = []
-
     for train_idx, test_idx in cv_split:
         y_train, y_test = labels[train_idx], labels[test_idx]
 
@@ -395,28 +397,25 @@ if __name__ == '__main__':
             score_this_window.append(lda.score(X_test, y_test))
         scores_windows.append(score_this_window)
 
-    # Plot scores over time
+    # plot scores over time
     w_times = (w_start + w_length / 2.) / sfreq + epochs.tmin
 
-    plt.figure()
-    plt.plot(w_times, np.mean(scores_windows, 0), label='Score')
-    plt.axvline(0, linestyle='--', color='k', label='Onset')
-    plt.axhline(0.5, linestyle='-', color='k', label='Chance')
-    plt.xlabel('time (s)')
-    plt.ylabel('classification accuracy')
-    plt.title('Classification score over time')
-    plt.legend(loc='lower right')
-    plt.show()
+    if do_plots:
+        plt.figure()
+        plt.plot(w_times, np.mean(scores_windows, 0), label='Score')
+        plt.axvline(0, linestyle='--', color='k', label='Onset')
+        plt.axhline(0.5, linestyle='-', color='k', label='Chance')
+        plt.xlabel('time (s)')
+        plt.ylabel('classification accuracy')
+        plt.title('Classification score over time')
+        plt.legend(loc='lower right')
+        plt.show()
 
     # visualize Epochs
-    # epochs['left hand MI'].plot_psd(picks='eeg')
-    # epochs['left hand MI'].plot_psd_topomap()
-    # epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
+    if do_plots:
+        epochs['left hand MI'].plot_psd(picks='eeg')
+        epochs['left hand MI'].plot_psd_topomap()
+        epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
-    # testing feather file format for storing data in binary format:
-    # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
-    # testing parquet file format for storing data in binary format:
-    # dfd.to_parquet('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.gzip',
-    #                compression='gzip')
     print("Finished.")
 

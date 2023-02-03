@@ -14,5 +14,6 @@
         "Welch_segment_length" : 10,
         "picks" : "None",
         "parallel_jobs" : 1
-    }
+    },
+    "plots" : 0
 }
