@@ -165,7 +165,7 @@ class DataLoader(object):
             if self.operating_system == 'Windows':
                 full_filename = 'C:\\Users\\Public\\Downloads\\' + filename
             elif self.operating_system == 'Darwin':
-                full_filename = '/' + filename
+                full_filename = '/Users/Shared/' + filename
             data_to_file.to_csv(full_filename, sep=',', index=False)
             data_query = 'COPY signal_data (experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", ' \
                          '"C4", "P3", "P4", "O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", ' \
