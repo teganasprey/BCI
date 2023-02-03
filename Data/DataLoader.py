@@ -11,11 +11,11 @@ import os
 if platform.system() == 'Darwin':
     import matplotlib as mpl
     import matplotlib.pyplot as plt
+
     mpl.use('macosx')
 
 
 class DataLoader(object):
-
     # class level constants
     ELECTRODE_NAMES_EXPECTED = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'A1', 'A2', 'F7', 'F8',
                                 'T3', 'T4', 'T5', 'T6', 'Fz', 'Cz', 'Pz', 'X3']
@@ -43,12 +43,12 @@ class DataLoader(object):
     marker_codes = None
     signal_readings = None
     electrode_names_raw = None
-    experiment_paradigm = None          # e.g., 5F, CLA, FREEFORM, HaLT, NoMT
-    experiment_stimuli = None           # e.g., LRHand
-    subject = None                      # A-J
-    file_date = None                    # YYMMDD
-    states = None                       # e.g., 3St
-    experiment_mode = None              # e.g., Inter, HFREQ
+    experiment_paradigm = None  # e.g., 5F, CLA, FREEFORM, HaLT, NoMT
+    experiment_stimuli = None  # e.g., LRHand
+    subject = None  # A-J
+    file_date = None  # YYMMDD
+    states = None  # e.g., 3St
+    experiment_mode = None  # e.g., Inter, HFREQ
 
     data_pandas = None
     data_polars = None
@@ -165,7 +165,7 @@ class DataLoader(object):
             if self.operating_system == 'Windows':
                 full_filename = 'C:\\Users\\Public\\Downloads\\' + filename
             elif self.operating_system == 'Darwin':
-                full_filename = '/Users/Shared/' + filename
+                full_filename = '/' + filename
             data_to_file.to_csv(full_filename, sep=',', index=False)
             data_query = 'COPY signal_data (experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", ' \
                          '"C4", "P3", "P4", "O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", ' \
@@ -336,6 +336,7 @@ if __name__ == '__main__':
                         preload=True)
     epochs['left hand MI'].plot_psd(picks='eeg')
     epochs['left hand MI'].plot_psd_topomap()
+    epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
     # testing feather file format for storing data in binary format:
     # dfd.to_feather('C:\\Users\\saspr\\source\\Python\\Tegan\\BCI\\Data\\CLA-SubjectJ-170508-3St-LRHand-Inter.fea')
