@@ -8,13 +8,16 @@ import platform
 import mne
 import os
 
-# imports for testing
+# imports for preprocessing and classification testing
 import numpy as np
+from mne.decoding import CSP
+from mne.preprocessing import ICA
+from mne.decoding import UnsupervisedSpatialFilter
+
 from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
-from mne.decoding import CSP
-from mne.preprocessing import ICA
+from sklearn.decomposition import PCA, FastICA
 
 
 if platform.system() == 'Darwin':
@@ -340,17 +343,19 @@ if __name__ == '__main__':
     # dfl = dl.to_polars()
 
     # create epochs
+    tmin = -0.3
+    tmax = 2.3
     event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
                   'initial relaxation period': 99, 'inter-session rest break period': 91,
                   'experiment end': 92}
-    epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=2.3, event_id=event_dict,
+    epochs = mne.Epochs(raw_mne, events, tmin=tmin, tmax=tmax, event_id=event_dict,
                         preload=True)
 
     # create Evoked objects
     evoked_lh = epochs['left hand MI'].average()
     evoked_rh = epochs['right hand MI'].average()
 
-    # set aside training data for the CSP
+    # set aside training data for the CSP using left and right hand MI events only
     epochs_to_use = epochs[['left hand MI', 'right hand MI']]
     epochs_train = epochs_to_use.copy().crop(tmin=0., tmax=2.)
     labels = epochs_to_use.events[:, -1] - 1
@@ -420,6 +425,24 @@ if __name__ == '__main__':
         epochs['left hand MI'].plot_psd(picks='eeg')
         epochs['left hand MI'].plot_psd_topomap()
         epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
+
+    # use PCA filtering
+    pca = UnsupervisedSpatialFilter(PCA(30), average=False)
+    pca_data = pca.fit_transform(epochs_data)
+    ev = mne.EvokedArray(np.mean(pca_data, axis=0),
+                         mne.create_info(30, epochs.info['sfreq'],
+                                         ch_types='eeg'), tmin=tmin)
+    if do_plots:
+        ev.plot(show=False, window_title="PCA", time_unit='s')
+
+    # use ICA filtering
+    ica = UnsupervisedSpatialFilter(FastICA(30), average=False)
+    ica_data = ica.fit_transform(epochs_data)
+    ev1 = mne.EvokedArray(np.mean(ica_data, axis=0),
+                          mne.create_info(30, epochs.info['sfreq'],
+                                          ch_types='eeg'), tmin=tmin)
+    if do_plots:
+        ev1.plot(show=False, window_title='ICA', time_unit='s')
 
     # use ICA preprocessing
     num_components = 15  # vary this number to get components that seem to represent the actual brain activations well
