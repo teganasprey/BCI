@@ -459,4 +459,3 @@ if __name__ == '__main__':
         ica.plot_overlay(raw_filter)
 
     print("Finished.")
-
