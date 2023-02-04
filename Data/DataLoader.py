@@ -427,19 +427,20 @@ if __name__ == '__main__':
         epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
     # use PCA filtering
-    pca = UnsupervisedSpatialFilter(PCA(30), average=False)
+    num_components = 10
+    pca = UnsupervisedSpatialFilter(PCA(num_components), average=False)
     pca_data = pca.fit_transform(epochs_data)
     ev = mne.EvokedArray(np.mean(pca_data, axis=0),
-                         mne.create_info(30, epochs.info['sfreq'],
+                         mne.create_info(num_components, epochs_to_use.info['sfreq'],
                                          ch_types='eeg'), tmin=tmin)
     if do_plots:
         ev.plot(show=False, window_title="PCA", time_unit='s')
 
     # use ICA filtering
-    ica = UnsupervisedSpatialFilter(FastICA(30), average=False)
+    ica = UnsupervisedSpatialFilter(FastICA(num_components), average=False)
     ica_data = ica.fit_transform(epochs_data)
     ev1 = mne.EvokedArray(np.mean(ica_data, axis=0),
-                          mne.create_info(30, epochs.info['sfreq'],
+                          mne.create_info(num_components, epochs.info['sfreq'],
                                           ch_types='eeg'), tmin=tmin)
     if do_plots:
         ev1.plot(show=False, window_title='ICA', time_unit='s')
