@@ -14,6 +14,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import ShuffleSplit, cross_val_score
 from mne.decoding import CSP
+from mne.preprocessing import ICA
 
 
 if platform.system() == 'Darwin':
@@ -417,5 +418,14 @@ if __name__ == '__main__':
         epochs['left hand MI'].plot_psd_topomap()
         epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
+    # use ICA preprocessing
+    num_components = 15  # vary this number to get components that seem to represent the actual brain activations well
+    ica = ICA(n_components=num_components, method='fastica')
+    ica.fit(raw_filter)
+    if do_plots:
+        ica.plot_components()
+        ica.plot_properties(raw_filter, picks=range(num_components))
+        ica.plot_properties(raw_filter, picks=6)
+        ica.plot_overlay(raw_filter, exclude=[9])
     print("Finished.")
 
