@@ -305,6 +305,15 @@ class DataLoader(object):
                                  event_id=self.CLA_HALT_FREEFORM_EVENT_DICT)
         return epochs
 
+    def create_event_dict_from_events(self, events) -> dict:
+        event_dict = {}
+        unique_event_ids = np.unique(events[:, 2])
+        # look for all entries in the supplied event ids
+        for name, value in self.CLA_HALT_FREEFORM_EVENT_DICT.items():
+            if value in unique_event_ids:
+                event_dict[name] = value
+        return event_dict
+
 
 if __name__ == '__main__':
     if platform.system() == 'Windows':
@@ -348,9 +357,7 @@ if __name__ == '__main__':
     # create epochs
     tmin = -0.3
     tmax = 2.3
-    event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
-                  'initial relaxation period': 99, 'inter-session rest break period': 91,
-                  'experiment end': 92}
+    event_dict = dl.create_event_dict_from_events(events=events)
     epochs = mne.Epochs(raw=raw_filter, events=events, tmin=tmin, tmax=tmax, event_id=event_dict, preload=True,
                         picks=picks)
 
