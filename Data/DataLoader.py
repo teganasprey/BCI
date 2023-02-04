@@ -332,7 +332,7 @@ if __name__ == '__main__':
 
     # try some filtering
     raw_filter = raw_mne.copy()
-    raw_filter.filter(7., 30., fir_design='firwin', skip_by_annotation='edge', picks='eeg')
+    raw_filter.filter(1., 20., fir_design='firwin', skip_by_annotation='edge', picks='eeg')
 
     # other data format tests to run:
     # raw_mne_file = dl.to_mne_raw()
@@ -345,15 +345,18 @@ if __name__ == '__main__':
                   'experiment end': 92}
     epochs = mne.Epochs(raw_mne, events, tmin=-0.3, tmax=2.3, event_id=event_dict,
                         preload=True)
+
+    # create Evoked objects
     evoked_lh = epochs['left hand MI'].average()
     evoked_rh = epochs['right hand MI'].average()
 
     # set aside training data for the CSP
-    epochs_train = epochs.copy().crop(tmin=0., tmax=2.)
-    labels = epochs.events[:, -1] - 2
+    epochs_to_use = epochs[['left hand MI', 'right hand MI']]
+    epochs_train = epochs_to_use.copy().crop(tmin=0., tmax=2.)
+    labels = epochs_to_use.events[:, -1] - 1
 
     # define a monte-carlo cross-validation generator (reduce variance):
-    epochs_data = epochs.get_data()
+    epochs_data = epochs_to_use.get_data()
     epochs_data_train = epochs_train.get_data()
     cv = ShuffleSplit(10, test_size=0.2, random_state=42)
     cv_split = cv.split(epochs_data_train)
