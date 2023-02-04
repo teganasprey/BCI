@@ -329,6 +329,9 @@ if __name__ == '__main__':
     # find the events in the data
     events = mne.find_events(raw_mne, stim_channel='STI001')
 
+    # create the vector to "pick" the EEG channels only
+    picks = mne.pick_types(raw_mne.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
+
     # plot the raw data with events overlaid
     if do_plots:
         raw_mne.plot(events=events, color='gray', event_color=dl.CLA_HALT_FREEFORM_EVENT_COLORS, scalings='auto')
@@ -348,8 +351,8 @@ if __name__ == '__main__':
     event_dict = {'left hand MI': 1, 'right hand MI': 2, 'passive state': 3,
                   'initial relaxation period': 99, 'inter-session rest break period': 91,
                   'experiment end': 92}
-    epochs = mne.Epochs(raw_mne, events, tmin=tmin, tmax=tmax, event_id=event_dict,
-                        preload=True)
+    epochs = mne.Epochs(raw=raw_filter, events=events, tmin=tmin, tmax=tmax, event_id=event_dict, preload=True,
+                        picks=picks)
 
     # create Evoked objects
     evoked_lh = epochs['left hand MI'].average()
@@ -427,7 +430,7 @@ if __name__ == '__main__':
         epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
     # use PCA filtering
-    num_components = 10
+    num_components = 15
     pca = UnsupervisedSpatialFilter(PCA(num_components), average=False)
     pca_data = pca.fit_transform(epochs_data)
     ev = mne.EvokedArray(np.mean(pca_data, axis=0),
@@ -453,6 +456,7 @@ if __name__ == '__main__':
         ica.plot_components()
         ica.plot_properties(raw_filter, picks=range(num_components))
         ica.plot_properties(raw_filter, picks=6)
-        ica.plot_overlay(raw_filter, exclude=[9])
+        ica.plot_overlay(raw_filter)
+
     print("Finished.")
 
