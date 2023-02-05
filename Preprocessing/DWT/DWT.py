@@ -2,9 +2,10 @@ from Data.DataLoader import DataLoader
 from Utilities.Config.Config import Config
 import platform
 import mne
+from mne.time_frequency import tfr_morlet
 
 
-class FFT(object):
+class DWT(object):
 
     config = None
     raw_mne_data = None
@@ -19,8 +20,8 @@ class FFT(object):
         self.raw_mne_data = dl.load_data_from_sql(self.config['data']['experiment_id'])
         return True
 
-    def to_fft(self):
-        psd, freqs = mne.time_frequency.psd_welch(inst=self.raw_mne_data)
+    def to_dwt(self):
+        psd, freqs = mne.time_frequency.tfr_morlet(inst=self.raw_mne_data)
         return psd, freqs
 
 
