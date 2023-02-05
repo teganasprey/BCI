@@ -376,7 +376,8 @@ if __name__ == '__main__':
     # perform CSP classification
     if bool(dl.config['CSP_settings']['CSP_classifier']):
         # set aside training data for the CSP using left and right hand MI events only
-        epochs_train = epochs_to_use.copy().crop(tmin=0., tmax=2.3)
+        epochs_train = epochs_to_use.copy().crop(tmin=dl.config['CSP_settings']['t_min'],
+                                                 tmax=dl.config['CSP_settings']['t_max'])
         labels = epochs_to_use.events[:, -1] - 1
 
         # define a monte-carlo cross-validation generator (reduce variance):
