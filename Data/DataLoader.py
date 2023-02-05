@@ -10,6 +10,7 @@ import os
 
 # imports for preprocessing and classification testing
 import numpy as np
+import matplotlib.pyplot as plt
 from mne.decoding import CSP
 from mne.preprocessing import ICA
 from mne.decoding import UnsupervisedSpatialFilter
@@ -22,8 +23,6 @@ from sklearn.decomposition import PCA, FastICA
 
 if platform.system() == 'Darwin':
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
-
     mpl.use('macosx')
 
 
