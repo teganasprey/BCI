@@ -1,19 +1,42 @@
 {
     "data" : {
         "directory" : "/Users/teganasprey/Desktop/Data",
-        "file" : "CLA-SubjectJ-170508-3St-LRHand-Inter.mat"
+        "file" : "CLA-SubjectJ-170508-3St-LRHand-Inter.mat",
+        "experiment_id": 1
     },
-    "framework" : "polars",
+    "data_framework" : "polars",
     "fft_settings" : {
         "frequency_min" : 100,
         "frequency_max" : 1000,
-        "time_min" : 0,
-        "time_max" : 1000,
+        "t_min" : 0,
+        "t_max" : 1000,
         "fft_length": 100,
         "overlap" : 10,
         "Welch_segment_length" : 10,
         "picks" : "None",
         "parallel_jobs" : 1
     },
-    "plots" : 0
+    "filter_settings" : {
+        "low_pass_frequency": 0.1,
+        "high_pass_frequency": 0
+    },
+    "epochs_settings": {
+        "t_min": -0.3,
+        "t_max": 2.3
+    },
+    "CSP_settings": {
+        "CSP_classifier": 1,
+        "num_components": 4
+    },
+    "PCA_settings": {
+        "PCA_filter": 0,
+        "num_components": 15
+    },
+    "ICA_settings": {
+        "ICA_filter": 0,
+        "ICA_preprocess": 0,
+        "num_components": 15
+    },
+    "do_plots" : 0,
+    "create_evoked_objects": 0
 }

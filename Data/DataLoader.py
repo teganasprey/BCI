@@ -81,7 +81,7 @@ class DataLoader(object):
 
         # use config settings to set fields
         self.file_name = config['data']['file']
-        self.framework = config['framework']
+        self.framework = config['data_framework']
         self.data_directory = config['data']['directory'].replace('{user}', self.user)
 
     def load_data_from_file(self) -> bool:
@@ -326,14 +326,14 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     dl = DataLoader(config=config)
-    do_plots = bool(config['plots'])
+    do_plots = bool(config['do_plots'])
 
     # load data from file and push it to the Postgres db
     # loaded = dl.load_data_from_file()
     # dl.push_data_to_sql()
 
     # load data from the Postgres db
-    raw_mne = dl.load_data_from_sql(experiment_id=6)
+    raw_mne = dl.load_data_from_sql(experiment_id=dl.config['data']['experiment_id'])
 
     # find the events in the data
     events = mne.find_events(raw_mne, stim_channel='STI001')
@@ -347,7 +347,12 @@ if __name__ == '__main__':
 
     # try some filtering
     raw_filter = raw_mne.copy()
-    raw_filter.filter(1., 20., fir_design='firwin', skip_by_annotation='edge', picks='eeg')
+    low_pass_frequency = dl.config['filter_settings']['low_pass_frequency']
+    high_pass_frequency = dl.config['filter_settings']['high_pass_frequency']
+    if high_pass_frequency == 0:
+        high_pass_frequency = None
+    raw_filter.filter(low_pass_frequency, high_pass_frequency, fir_design='firwin', skip_by_annotation='edge',
+                      picks='eeg')
 
     # other data format tests to run:
     # raw_mne_file = dl.to_mne_raw()
@@ -355,80 +360,83 @@ if __name__ == '__main__':
     # dfl = dl.to_polars()
 
     # create epochs
-    tmin = -0.3
-    tmax = 2.3
+    t_min = dl.config['epochs_settings']['t_min']
+    t_max = dl.config['epochs_settings']['t_max']
     event_dict = dl.create_event_dict_from_events(events=events)
-    epochs = mne.Epochs(raw=raw_filter, events=events, tmin=tmin, tmax=tmax, event_id=event_dict, preload=True,
+    epochs = mne.Epochs(raw=raw_filter, events=events, tmin=t_min, tmax=t_max, event_id=event_dict, preload=True,
                         picks=picks)
+    epochs_to_use = epochs[['left hand MI', 'right hand MI']]
+    epochs_data = epochs_to_use.get_data()
 
     # create Evoked objects
-    evoked_lh = epochs['left hand MI'].average()
-    evoked_rh = epochs['right hand MI'].average()
+    if bool(dl.config['create_evoked_objects']):
+        evoked_lh = epochs['left hand MI'].average()
+        evoked_rh = epochs['right hand MI'].average()
 
-    # set aside training data for the CSP using left and right hand MI events only
-    epochs_to_use = epochs[['left hand MI', 'right hand MI']]
-    epochs_train = epochs_to_use.copy().crop(tmin=0., tmax=2.)
-    labels = epochs_to_use.events[:, -1] - 1
+    # perform CSP classification
+    if bool(dl.config['CSP_settings']['CSP_classifier']):
+        # set aside training data for the CSP using left and right hand MI events only
+        epochs_train = epochs_to_use.copy().crop(tmin=0., tmax=2.3)
+        labels = epochs_to_use.events[:, -1] - 1
 
-    # define a monte-carlo cross-validation generator (reduce variance):
-    epochs_data = epochs_to_use.get_data()
-    epochs_data_train = epochs_train.get_data()
-    cv = ShuffleSplit(10, test_size=0.2, random_state=42)
-    cv_split = cv.split(epochs_data_train)
+        # define a monte-carlo cross-validation generator (reduce variance):
+        epochs_data_train = epochs_train.get_data()
+        cv = ShuffleSplit(10, test_size=0.2, random_state=42)
+        cv_split = cv.split(epochs_data_train)
 
-    # assemble a classifier
-    lda = LinearDiscriminantAnalysis()
-    csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
+        # assemble a classifier
+        lda = LinearDiscriminantAnalysis()
+        csp = CSP(n_components=dl.config['CSP_settings']['num_components'], reg=None, log=True, norm_trace=False)
 
-    # use scikit-learn Pipeline with cross_val_score function
-    clf = Pipeline([('CSP', csp), ('LDA', lda)])
-    scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1)
+        # use scikit-learn Pipeline with cross_val_score function
+        clf = Pipeline([('CSP', csp), ('LDA', lda)])
+        scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1)
 
-    # printing the results
-    class_balance = np.mean(labels == labels[0])
-    class_balance = max(class_balance, 1. - class_balance)
-    print("Classification accuracy: %f / Chance level: %f" % (np.mean(scores), class_balance))
+        # printing the results
+        class_balance = np.mean(labels == labels[0])
+        class_balance = max(class_balance, 1. - class_balance)
+        print("Classification accuracy: %f / Chance level: %f" % (np.mean(scores), class_balance))
 
-    # plot CSP patterns estimated on full data for visualization
-    if do_plots:
-        csp.fit_transform(epochs_data, labels)
-        csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (AU)', size=1.5)
+        # plot CSP patterns estimated on full data for visualization
+        if do_plots:
+            csp.fit_transform(epochs_data, labels)
+            csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (AU)', size=1.5)
 
-    sfreq = raw_mne.info['sfreq']
-    w_length = int(sfreq * 0.5)     # running classifier: window length
-    w_step = int(sfreq * 0.1)       # running classifier: window step size
-    w_start = np.arange(0, epochs_data.shape[2] - w_length, w_step)
+        sfreq = raw_mne.info['sfreq']
+        w_length = int(sfreq * 0.5)     # running classifier: window length
+        w_step = int(sfreq * 0.1)       # running classifier: window step size
+        w_start = np.arange(0, epochs_data.shape[2] - w_length, w_step)
 
-    scores_windows = []
-    for train_idx, test_idx in cv_split:
-        y_train, y_test = labels[train_idx], labels[test_idx]
+        scores_windows = []
+        for train_idx, test_idx in cv_split:
+            y_train, y_test = labels[train_idx], labels[test_idx]
 
-        X_train = csp.fit_transform(epochs_data_train[train_idx], y_train)
-        X_test = csp.transform(epochs_data_train[test_idx])
+            X_train = csp.fit_transform(epochs_data_train[train_idx], y_train)
+            X_test = csp.transform(epochs_data_train[test_idx])
 
-        # fit classifier
-        lda.fit(X_train, y_train)
+            # fit classifier
+            lda.fit(X_train, y_train)
 
-        # running classifier: test classifier on sliding window
-        score_this_window = []
-        for n in w_start:
-            X_test = csp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
-            score_this_window.append(lda.score(X_test, y_test))
-        scores_windows.append(score_this_window)
+            # running classifier: test classifier on sliding window
+            score_this_window = []
+            for n in w_start:
+                X_test = csp.transform(epochs_data[test_idx][:, :, n:(n + w_length)])
+                score_this_window.append(lda.score(X_test, y_test))
+            scores_windows.append(score_this_window)
 
-    # plot scores over time
-    w_times = (w_start + w_length / 2.) / sfreq + epochs.tmin
+        # plot scores over time
+        w_times = (w_start + w_length / 2.) / sfreq + epochs.tmin
 
-    if do_plots:
-        plt.figure()
-        plt.plot(w_times, np.mean(scores_windows, 0), label='Score')
-        plt.axvline(0, linestyle='--', color='k', label='Onset')
-        plt.axhline(0.5, linestyle='-', color='k', label='Chance')
-        plt.xlabel('time (s)')
-        plt.ylabel('classification accuracy')
-        plt.title('Classification score over time')
-        plt.legend(loc='lower right')
-        plt.show()
+        if do_plots:
+            plt.figure()
+            plt.plot(w_times, np.mean(scores_windows, 0), label='Score')
+            plt.axvline(0, linestyle='--', color='k', label='Onset')
+            plt.axhline(0.5, linestyle='-', color='k', label='Chance')
+            plt.xlabel('time (s)')
+            plt.ylabel('classification accuracy')
+            plt.title('Classification score over time')
+            plt.legend(loc='lower right')
+            plt.show()
 
     # visualize Epochs
     if do_plots:
@@ -437,32 +445,36 @@ if __name__ == '__main__':
         epochs['left hand MI'].plot_image(picks='eeg', combine='mean')
 
     # use PCA filtering
-    num_components = 15
-    pca = UnsupervisedSpatialFilter(PCA(num_components), average=False)
-    pca_data = pca.fit_transform(epochs_data)
-    ev = mne.EvokedArray(np.mean(pca_data, axis=0),
-                         mne.create_info(num_components, epochs_to_use.info['sfreq'],
-                                         ch_types='eeg'), tmin=tmin)
-    if do_plots:
-        ev.plot(show=False, window_title="PCA", time_unit='s')
+    if bool(dl.config['PCA_settings']['PCA_filter']):
+        num_components = dl.config['PCA_settings']['num_components']
+        pca = UnsupervisedSpatialFilter(PCA(num_components), average=False)
+        pca_data = pca.fit_transform(epochs_data)
+        ev = mne.EvokedArray(np.mean(pca_data, axis=0),
+                             mne.create_info(num_components, epochs_to_use.info['sfreq'],
+                                             ch_types='eeg'), tmin=t_min)
+        if do_plots:
+            ev.plot(show=False, window_title="PCA", time_unit='s')
 
     # use ICA filtering
-    ica = UnsupervisedSpatialFilter(FastICA(num_components), average=False)
-    ica_data = ica.fit_transform(epochs_data)
-    ev1 = mne.EvokedArray(np.mean(ica_data, axis=0),
-                          mne.create_info(num_components, epochs.info['sfreq'],
-                                          ch_types='eeg'), tmin=tmin)
-    if do_plots:
-        ev1.plot(show=False, window_title='ICA', time_unit='s')
+    if bool(dl.config['ICA_settings']['ICA_filter']):
+        num_components = dl.config['ICA_settings']['num_components']
+        ica = UnsupervisedSpatialFilter(FastICA(num_components), average=False)
+        ica_data = ica.fit_transform(epochs_data)
+        ev1 = mne.EvokedArray(np.mean(ica_data, axis=0),
+                              mne.create_info(num_components, epochs_to_use.info['sfreq'],
+                                              ch_types='eeg'), tmin=t_min)
+        if do_plots:
+            ev1.plot(show=False, window_title='ICA', time_unit='s')
 
     # use ICA preprocessing
-    num_components = 15  # vary this number to get components that seem to represent the actual brain activations well
-    ica = ICA(n_components=num_components, method='fastica')
-    ica.fit(raw_filter)
-    if do_plots:
-        ica.plot_components()
-        ica.plot_properties(raw_filter, picks=range(num_components))
-        ica.plot_properties(raw_filter, picks=6)
-        ica.plot_overlay(raw_filter)
+    if bool(dl.config['ICA_settings']['ICA_preprocess']):
+        # vary num_components that seem to represent the actual brain activations well
+        num_components = dl.config['ICA_settings']['num_components']
+        ica = ICA(n_components=num_components, method='fastica')
+        ica.fit(raw_filter)
+        if do_plots:
+            ica.plot_components()
+            ica.plot_properties(raw_filter, picks=range(num_components))
+            ica.plot_overlay(raw_filter)
 
     print("Finished.")
