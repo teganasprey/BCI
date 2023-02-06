@@ -35,4 +35,5 @@ if __name__ == '__main__':
     config = Config(file_name=filename)
     config = config.settings
     fft = FFT(config=config)
-    psd, freqs = fft.to_fft()
+    if fft.get_data():
+        psd, freqs = fft.to_fft()

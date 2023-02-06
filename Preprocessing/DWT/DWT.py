@@ -39,5 +39,6 @@ if __name__ == '__main__':
 
     config = Config(file_name=filename)
     config = config.settings
-    fft = FFT(config=config)
-    psd, freqs = fft.to_fft()
+    dwt = DWT(config=config)
+    if dwt.get_data():
+        power, itc = dwt.to_dwt()
