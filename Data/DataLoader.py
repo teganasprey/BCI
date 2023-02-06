@@ -292,16 +292,19 @@ class DataLoader(object):
         # info['line_freq'], info['temp']
         return info
 
-    def create_mne_epochs(self) -> mne.EpochsArray:
+    def create_mne_epochs(self, raw_mne) -> mne.Epochs:
         """
         Method to create MNE epochs array from scratch
         :return: MNE Epochs Array contains the epochs data
         :rtype: mne.EpochsArray
         """
-        data = self.data_pandas
         events = mne.find_events(raw_mne, stim_channel='STI001')
-        epochs = mne.EpochsArray(data=data.to_numpy(), info=self.create_mne_info(), events=events, tmin=0,
-                                 event_id=self.CLA_HALT_FREEFORM_EVENT_DICT)
+        picks = mne.pick_types(raw_mne.info, meg=False, eeg=True, stim=False, eog=False, exclude='bads')
+        event_dict= self.create_event_dict_from_events(events=events)
+        t_min = dl.config['epochs_settings']['t_min']
+        t_max = dl.config['epochs_settings']['t_max']
+        epochs = mne.Epochs(raw=raw_mne, events=events, tmin=t_min, tmax=t_max, event_id=event_dict, preload=True,
+                            picks=picks)
         return epochs
 
     def create_event_dict_from_events(self, events) -> dict:
