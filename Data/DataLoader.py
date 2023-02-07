@@ -176,7 +176,7 @@ class DataLoader(object):
             if self.operating_system == 'Windows':
                 full_filename = 'C:\\Users\\Public\\Downloads\\' + filename
             elif self.operating_system == 'Darwin':
-                full_filename = '/' + filename
+                full_filename = '/Users/Shared/' + filename
             data_to_file.to_csv(full_filename, sep=',', index=False)
             data_query = 'COPY signal_data (experiment_id, sample_index, marker, "Fp1", "Fp2", "F3", "F4", "C3", ' \
                          '"C4", "P3", "P4", "O1", "O2", "A1", "A2", "F7", "F8", "T3", "T4", "T5", "T6", "Fz", "Cz", ' \
@@ -331,8 +331,8 @@ if __name__ == '__main__':
     do_plots = bool(config['do_plots'])
 
     # load data from file and push it to the Postgres db
-    # loaded = dl.load_data_from_file()
-    # dl.push_data_to_sql()
+    loaded = dl.load_data_from_file()
+    dl.push_data_to_sql()
 
     # load data from the Postgres db
     raw_mne = dl.load_data_from_sql(experiment_id=dl.config['data']['experiment_id'])
