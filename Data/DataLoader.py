@@ -331,8 +331,8 @@ if __name__ == '__main__':
     do_plots = bool(config['do_plots'])
 
     # load data from file and push it to the Postgres db
-    loaded = dl.load_data_from_file()
-    dl.push_data_to_sql()
+    #loaded = dl.load_data_from_file()
+    #dl.push_data_to_sql()
 
     # load data from the Postgres db
     raw_mne = dl.load_data_from_sql(experiment_id=dl.config['data']['experiment_id'])
