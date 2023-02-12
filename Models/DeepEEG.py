@@ -20,7 +20,6 @@ from mne import pick_types, viz, io, Epochs, create_info
 from mne import pick_channels, concatenate_epochs
 from mne.datasets import sample
 from mne.simulation import simulate_sparse_stc, simulate_raw
-from mne.channels import read_montage
 from mne.time_frequency import tfr_morlet
 
 import numpy as np
@@ -200,7 +199,7 @@ def load_muse_csv_as_raw(filename, sfreq=256., ch_ind=[0, 1, 2, 3],
 
         # type of each channels
         ch_types = ['eeg'] * n_channel + ['stim']
-        montage = read_montage('standard_1005')
+        #montage = read_montage('standard_1005')
 
         # get data and exclude Aux channel
         data = data.values[:, ch_ind + [stim_ind]].T
@@ -210,7 +209,8 @@ def load_muse_csv_as_raw(filename, sfreq=256., ch_ind=[0, 1, 2, 3],
 
         # create MNE object
         info = create_info(ch_names=ch_names, ch_types=ch_types,
-                           sfreq=sfreq, montage=montage, verbose=verbose)
+                           sfreq=sfreq, verbose=verbose)
+        info.set_montage('standard_1005')
         raw.append(RawArray(data=data, info=info, verbose=verbose))
 
     # concatenate all raw objects
