@@ -316,9 +316,9 @@ class DataLoader(object):
                 event_dict[name] = value
         return event_dict
 
-    def create_mne_evoked(self, raw_mne) -> mne.Evoked:
+    def create_mne_evoked(self, raw_mne, method="mean", by_event_type=False) -> mne.Evoked:
         epochs = self.create_mne_epochs(raw_mne=raw_mne)
-        evoked = epochs.average()
+        evoked = epochs.average(method=method, by_event_type=by_event_type)
         return evoked
 
 
