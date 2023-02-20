@@ -9,15 +9,19 @@ class FFT(object):
     config = None
     raw_mne_data = None
     pandas_data = None
+    data_loader = None
     data_loaded = False
 
     def __init__(self, config=None):
         self.config = config
+        self.data_loader = DataLoader(config=self.config)
 
     def get_data(self) -> bool:
-        dl = DataLoader(config=self.config)
-        self.raw_mne_data = dl.load_data_from_sql(self.config['data']['experiment_id'])
+        self.raw_mne_data = self.data_loader.load_data_from_sql(self.config['data']['experiment_id'])
         return True
+
+    def set_data(self, data=None):
+        self.raw_mne_data = data
 
     def to_fft(self):
         psd, freqs = mne.time_frequency.psd_welch(inst=self.raw_mne_data)

@@ -21,10 +21,13 @@ class DWT(object):
         self.raw_mne_data = self.data_loader.load_data_from_sql(self.config['data']['experiment_id'])
         return True
 
+    def set_data(self, data=None):
+        self.raw_mne_data = data
+
     def to_dwt(self):
         # create Epochs data
         epochs = self.data_loader.create_mne_epochs(self.raw_mne_data)
-        # morlet wavelet requires MNE Epochs format
+        # Morlet wavelet requires MNE Epochs format
         power, itc = mne.time_frequency.tfr_morlet(inst=epochs)
         return power, itc
 
