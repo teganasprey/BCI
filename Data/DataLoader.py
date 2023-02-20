@@ -316,6 +316,11 @@ class DataLoader(object):
                 event_dict[name] = value
         return event_dict
 
+    def create_mne_evoked(self, raw_mne) -> mne.Evoked:
+        epochs = self.create_mne_epochs(raw_mne=raw_mne)
+        evoked = epochs.average()
+        return evoked
+
 
 if __name__ == '__main__':
     if platform.system() == 'Windows':
