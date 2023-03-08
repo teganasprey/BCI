@@ -6,7 +6,7 @@
 
 from numpy.random import seed
 
-from tensorflow import set_random_seed
+import tensorflow as tf
 
 import os
 from glob import glob
@@ -44,7 +44,7 @@ from sklearn.utils import class_weight
 from sklearn.model_selection import train_test_split
 
 seed(1017)
-set_random_seed(1017)
+tf.random.set_seed(1017)
 
 
 class Feats:
